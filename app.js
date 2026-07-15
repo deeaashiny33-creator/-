@@ -153,48 +153,20 @@ window.buyAccount = function(title, price, category, secretInfo = "") {
     window.updateWalletDisplay();
 };
 
-// --- جلب المنتجات المضافة ديناميكياً من الفايربيس (تم إصلاح جلب وعرض الصور الأربعة وربطها بالمعرض بدقة) ---
+// --- جلب المنتجات المضافة ديناميكياً من الفايربيس (تم التعديل وحذف الحسابات الوهمية بنجاح) ---
 function listenToProducts() {
     db.ref('products').on('value', (snapshot) => {
         const data = snapshot.val();
         const pubgContainer = document.getElementById('pubg-products-container');
         const clashContainer = document.getElementById('clash-products-container');
 
-        // تفريغ الحاويات وعرض الحسابات الإفتراضية مع تمكين رابط المعرض لها كاحتياط
+        // تفريغ الحاويات لكي تظهر الحسابات الحقيقية فقط من قاعدة البيانات
         if(pubgContainer) {
-            const pubgStaticImgPage = `img.html?img1=${encodeURIComponent('https://via.placeholder.com/450x200')}`;
-            pubgContainer.innerHTML = `
-                <div class="product-card">
-                    <a href="${pubgStaticImgPage}" target="_self" style="display:block; text-decoration:none;">
-                        <img class="product-img" src="https://via.placeholder.com/450x200" alt="ببجي" title="اضغط لمشاهدة صور الحساب كاملة">
-                    </a>
-                    <div class="product-details">
-                        <div class="product-title">حساب ببجي مشحون كونكر وسكنات أسطورية</div>
-                        <div class="product-price">50 $</div>
-                        <button class="buy-btn" style="background-color: var(--pubg-color); cursor: pointer;" onclick="buyAccount('حساب ببجي كونكر موسم 14', '50', 'ببجي موبايل', 'Email: pubg_conqueror@mail.com | Pass: Pubg1234')">
-                            🛒 شراء آمن وفوري ⚡
-                        </button>
-                    </div>
-                </div>
-            `;
+            pubgContainer.innerHTML = '';
         }
 
         if(clashContainer) {
-            const clashStaticImgPage = `img.html?img1=${encodeURIComponent('https://via.placeholder.com/450x200')}`;
-            clashContainer.innerHTML = `
-                <div class="product-card" id="best-clash-offer">
-                    <a href="${clashStaticImgPage}" target="_self" style="display:block; text-decoration:none;">
-                        <img class="product-img" src="https://via.placeholder.com/450x200" alt="كلاش" title="اضغط لمشاهدة صور الحساب كاملة">
-                    </a>
-                    <div class="product-details">
-                        <div class="product-title">🔥 أعلى تاون (Town Hall 16 Max) بأقل سعر في الموقع</div>
-                        <div class="product-price">65 $</div>
-                        <button class="buy-btn" style="cursor: pointer;" onclick="buyAccount('تاون هول 16 ماكس أسطوري', '65', 'كلاش أوف كلانس', 'Supercell ID: clash_th16@mail.com | Code Sent on Login')">
-                            🛒 شراء آمن وفوري ⚡
-                        </button>
-                    </div>
-                </div>
-            `;
+            clashContainer.innerHTML = '';
         }
 
         // جلب بضاعتك الحقيقية المرفوعة من الفايربيس وإظهار صورها الحقيقية الأربعة وتفعيل المعرض لها
@@ -370,3 +342,4 @@ document.addEventListener("DOMContentLoaded", () => {
     window.updateWalletDisplay();
     listenToProducts();
 });
+            
