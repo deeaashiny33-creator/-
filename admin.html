@@ -8,6 +8,7 @@
     
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
@@ -242,10 +243,10 @@
 
     <div id="login-page" class="admin-page active">
         <div class="login-box">
-            <div class="login-title">🔐 تسجيل دخول المدير ضياء</div>
-            <input type="text" id="username" class="input-field" placeholder="اسم المستخدم">
+            <div class="login-title">🔐 بوابة دخول المدير ضياء الآمنة</div>
+            <input type="email" id="username" class="input-field" placeholder="البريد الإلكتروني للأدمن">
             <input type="password" id="password" class="input-field" placeholder="كلمة المرور">
-            <button class="submit-btn" onclick="login()">دخول آمن</button>
+            <button class="submit-btn" onclick="login()">دخول آمن بالنظام</button>
         </div>
     </div>
 
@@ -290,7 +291,7 @@
             
         </div>
     </div>
-    <script>
+        <script>
         // تهيئة الفايربيس وربطها بالمستودع الفعلي الخاص بك
         const firebaseConfig = {
             apiKey: "AIzaSyDNPdxQMMPUO1Gn-hQztcy0GEGcmA22PWs",
@@ -304,22 +305,35 @@
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+        const auth = firebase.auth();
 
         const SECRET_ENCRYPTION_KEY = "DyaaSukAlAsateerSecurityKey2026";
         let editModeId = null;
 
         function login() {
-            const user = document.getElementById('username').value.trim();
+            const email = document.getElementById('username').value.trim();
             const pass = document.getElementById('password').value.trim();
 
-            if (user === "ضياء" && pass === "1234") {
-                document.getElementById('login-page').classList.remove('active');
-                document.getElementById('dashboard-page').classList.add('active');
-                listenToFirebaseProducts();
-                listenToFirebaseOrders();
-            } else {
-                alert("البيانات خاطئة يا مدير ضياء! تأكد من الحقول.");
+            if(!email || !pass) {
+                alert("الرجاء إدخال الإيميل وكلمة المرور الخاصة بالأدمن.");
+                return;
             }
+
+            // تسجيل الدخول الحقيقي عبر Firebase Auth لحماية الاتصال بالقواعد
+            auth.signInWithEmailAndPassword(email, pass)
+                .then((userCredential) => {
+                    // طباعة الـ UID في الكونسول لتنسخه وتضعه في القواعد
+                    console.log("الـ UID الخاص بك هو: ", userCredential.user.uid);
+                    alert("أهلاً بك يا مدير ضياء! الـ UID الخاص بك تم نسخه بالكونسول لتوثيق الأمان: " + userCredential.user.uid);
+                    
+                    document.getElementById('login-page').classList.remove('active');
+                    document.getElementById('dashboard-page').classList.add('active');
+                    listenToFirebaseProducts();
+                    listenToFirebaseOrders();
+                })
+                .catch(err => {
+                    alert("فشل تسجيل الدخول: " + err.message);
+                });
         }
 
         function listenToFirebaseOrders() {
@@ -509,7 +523,7 @@
                     alert("تم تعديل المنتج بنجاح وتحديثه لدى جميع زوار الموقع! ✅");
                     cancelEditMode();
                 }).catch(err => {
-                    alert("فشل التحديث: " + err.message);
+                    alert("رسالة خطأ + الشبكة: " + err.message);
                 });
             } else {
                 const newProdRef = db.ref('products').push();
@@ -523,20 +537,21 @@
                     img4,
                     secret: encryptedSecret
                 }).then(() => {
-                    alert("تم نشر الحساب الجديد بنجاح وعرضه على متجرك! 🚀");
+                    alert("تم نشر القانون الجديد بنجاح على متجرك! 🚀");
                     cancelEditMode();
                 }).catch(err => {
-                    alert("فشل النشر: " + err.message);
+                    alert("رسالة خطأ + ثغرة إخبارية: " + err.message);
                 });
             }
         }
 
         function deleteAccount(id) {
-            if (confirm("هل أنت متأكد من حذف هذا الحساب نهائياً من المتجر؟")) {
-                db.ref(`products/${id}`).remove().then(() => {
-                    alert("تم حذف الحساب بنجاح من متجرك ✅");
+            if (confirm("هل أنت متأكد من حذف هذا الحساب نهائياً من السوق؟")) {
+                db.ref(`products/${id}`).remove()
+                .then(() => {
+                    alert("تم حذف الفعال من متجرك ✅");
                 }).catch(err => {
-                    alert("فشل الحذف: " + err.message);
+                    alert("رسالة خطأ + الشبكة الضعيفة: " + err.message);
                 });
             }
         }
