@@ -14,7 +14,7 @@
         @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Tajawal', sans-serif; -webkit-tap-highlight-color: transparent; }
         body { background-color: #0b0c10; color: #ffffff; padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; }
-        .admin-page { display: none; width: 100%; max-width: 400px; }
+        .admin-page { display: none; width: 100%; max-width: 450px; }
         .active { display: block; }
         .login-box, .dashboard-box { border: 2px solid #ffcc00; border-radius: 20px; padding: 25px 20px; background: #0f1013; text-align: center; box-shadow: 0 0 20px rgba(255, 204, 0, 0.15); }
         .login-title, .dashboard-title { color: #ffcc00; font-size: 22px; font-weight: bold; margin-bottom: 25px; display: flex; align-items: center; justify-content: center; gap: 8px; }
@@ -33,7 +33,7 @@
         .inventory-card { background: #1c1d22; border: 1px solid #2a2a2a; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
         .inventory-card-title { font-size: 14px; font-weight: bold; color: #ffffff; }
         .inventory-card-price { font-size: 13px; color: #ffcc00; }
-        .inventory-card-actions { display: flex; gap: 10px; margin-top: 5px; }
+        .inventory-card-actions { display: flex; gap: 10px; margin-top: 5px; flex-wrap: wrap; }
         .action-btn { flex: 1; padding: 10px 8px; border: none; border-radius: 8px; font-size: 13px; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 4px; }
         .edit-btn, .confirm-pay-btn { background: #2ec4b6; color: #000; }
         .delete-btn, .reject-pay-btn { background: #ff4545; color: #fff; }
@@ -74,8 +74,15 @@
             <button id="cancel-edit-btn" class="submit-btn" style="background: #888; margin-top: 10px; display: none;" onclick="cancelEditMode()">إلغاء التعديل</button>
             
             <hr class="separator">
+
+            <div class="section-title" style="color: #25D366;">📥 طلبات بيع الحسابات (من البائعين)</div>
+            <div id="sell-requests-container" class="inventory-list">
+                <div class="info-text">جاري جلب طلبات البيع...</div>
+            </div>
             
-            <div class="section-title pending">📥 طلبات المبيعات المعلقة (شام كاش / بينانس)</div>
+            <hr class="separator">
+            
+            <div class="section-title pending">📥 طلبات الشراء المعلقة (شام كاش / بينانس)</div>
             <div id="pending-container" class="inventory-list">
                 <div class="info-text">جاري جلب الطلبات من الفايربيس...</div>
             </div>
@@ -119,17 +126,96 @@
 
             auth.signInWithEmailAndPassword(email, pass)
                 .then((userCredential) => {
-                    console.log("الـ UID الخاص بك هو: ", userCredential.user.uid);
-                    alert("أهلاً بك يا مدير ضياء! الـ UID الخاص بك تم نسخه بالكونسول لتوثيق الأمان: " + userCredential.user.uid);
-                    
+                    alert("أهلاً بك يا مدير ضياء!");
                     document.getElementById('login-page').classList.remove('active');
                     document.getElementById('dashboard-page').classList.add('active');
                     listenToFirebaseProducts();
                     listenToFirebaseOrders();
+                    listenToSellRequests();
                 })
                 .catch(err => {
                     alert("فشل تسجيل الدخول: " + err.message);
                 });
+        }
+                function listenToSellRequests() {
+            db.ref('sell_requests').on('value', (snapshot) => {
+                const data = snapshot.val();
+                const container = document.getElementById('sell-requests-container');
+                container.innerHTML = '';
+
+                if (!data) {
+                    container.innerHTML = '<div class="info-text">لا توجد طلبات بيع معلقة حالياً.</div>';
+                    return;
+                }
+
+                let hasRequests = false;
+                for (let id in data) {
+                    const req = data[id];
+                    if (req.status === 'pending') {
+                        hasRequests = true;
+                        const card = document.createElement('div');
+                        card.className = 'inventory-card';
+                        card.style.borderColor = '#25D366';
+                        
+                        let imagesHTML = '';
+                        if(req.img1) imagesHTML += `<img src="${req.img1}" style="width:50px; height:50px; object-fit:cover; border-radius:6px; margin-left:5px;">`;
+                        if(req.img2) imagesHTML += `<img src="${req.img2}" style="width:50px; height:50px; object-fit:cover; border-radius:6px; margin-left:5px;">`;
+                        if(req.img3) imagesHTML += `<img src="${req.img3}" style="width:50px; height:50px; object-fit:cover; border-radius:6px; margin-left:5px;">`;
+
+                        card.innerHTML = `
+                            <div class="inventory-card-title">🎮 القسم: ${req.category}</div>
+                            <div class="inventory-card-title">📝 العنوان: ${req.title}</div>
+                            <div class="inventory-card-price">💰 السعر المطلوب: ${req.price} $</div>
+                            <div class="inventory-card-price" style="color: #fff;">📧 الإيميل: ${req.email}</div>
+                            <div class="inventory-card-price" style="color: #ffcc00;">🔑 كلمة السر: ${req.pass}</div>
+                            <div style="margin-top: 5px;">${imagesHTML}</div>
+                            <div class="inventory-card-actions">
+                                <button class="action-btn confirm-pay-btn" style="background:#25D366;" onclick="approveAndPublishSellRequest('${id}')">✅ قبول ونشر بالمتجر</button>
+                                <button class="action-btn reject-pay-btn" onclick="rejectSellRequest('${id}')">❌ رفض الطلب</button>
+                            </div>
+                        `;
+                        container.appendChild(card);
+                    }
+                }
+
+                if (!hasRequests) {
+                    container.innerHTML = '<div class="info-text">لا توجد طلبات بيع معلقة حالياً.</div>';
+                }
+            });
+        }
+
+        function approveAndPublishSellRequest(reqId) {
+            db.ref(`sell_requests/${reqId}`).once('value').then(snapshot => {
+                const req = snapshot.val();
+                if (!req) return;
+
+                if (confirm(`هل تم فحص الحساب (${req.title}) والتأكد منه وتريد نشره فوراً بالمتجر؟`)) {
+                    const secretRaw = `الإيميل: ${req.email} | كلمة السر: ${req.pass}`;
+                    const encryptedSecret = CryptoJS.AES.encrypt(secretRaw, SECRET_ENCRYPTION_KEY).toString();
+
+                    const newProdRef = db.ref('products').push();
+                    newProdRef.set({
+                        category: req.category,
+                        title: req.title,
+                        price: req.price,
+                        img: req.img1 || '',
+                        img2: req.img2 || '',
+                        img3: req.img3 || '',
+                        img4: '',
+                        secret: encryptedSecret
+                    }).then(() => {
+                        db.ref(`sell_requests/${reqId}`).update({ status: 'approved' });
+                        alert("تمت الموافقة ونشر الحساب بالمتجر بنجاح! 🚀");
+                    });
+                }
+            });
+        }
+
+        function rejectSellRequest(reqId) {
+            if (confirm("هل أنت متأكد من رفض طلب البيع هذا؟")) {
+                db.ref(`sell_requests/${reqId}`).update({ status: 'rejected' })
+                .then(() => alert("تم رفض الطلب بنجاح ❌"));
+            }
         }
 
         function listenToFirebaseOrders() {
@@ -181,7 +267,7 @@
                         const decodedText = bytes.toString(CryptoJS.enc.Utf8);
                         if (decodedText) decryptedInfo = decodedText;
                     } catch (e) {
-                        console.log("البيانات مرسلة كنص عادي أو حدث خطأ أثناء فك التشفير التلقائي:", e);
+                        console.log("البيانات مرسلة كنص عادي:", e);
                     }
                 } else {
                     decryptedInfo = "لم يتم توفير تفاصيل إضافية، يرجى مراجعة الإدارة";
@@ -191,7 +277,7 @@
                     status: 'completed',
                     accountInfo: decryptedInfo
                 }).then(() => {
-                    alert("تم قبول وتحديث الطلب بنجاح! يمكن للزبون الآن رؤية البيانات في حسابه فوراً 🚀");
+                    alert("تم قبول وتحديث الطلب بنجاح! 🚀");
                 }).catch(err => {
                     alert("فشل تحديث الطلب: " + err.message);
                 });
@@ -203,7 +289,7 @@
                 db.ref(`orders/${orderId}`).update({
                     status: 'rejected'
                 }).then(() => {
-                    alert("تم رفض الطلب بنجاح وتحديث واجهة المستخدم للعميل ❌");
+                    alert("تم رفض الطلب بنجاح ❌");
                 }).catch(err => {
                     alert("فشل الرفض: " + err.message);
                 });
@@ -217,7 +303,7 @@
                 container.innerHTML = '';
 
                 if (!data) {
-                    container.innerHTML = '<div class="info-text" style="margin-bottom: 0;">لا توجد حسابات معروضة حالياً بالمتجر.</div>';
+                    container.innerHTML = '<div class="info-text">لا توجد حسابات معروضة حالياً بالمتجر.</div>';
                     return;
                 }
 
@@ -304,7 +390,7 @@
                 db.ref(`products/${editModeId}`).update({
                     category, title, price, img, img2, img3, img4, secret: encryptedSecret
                 }).then(() => {
-                    alert("تم تعديل المنتج بنجاح وتحديثه لدى جميع زوار الموقع! ✅");
+                    alert("تم تعديل المنتج بنجاح! ✅");
                     cancelEditMode();
                 }).catch(err => alert("رسالة خطأ: " + err.message));
             } else {
@@ -312,7 +398,7 @@
                 newProdRef.set({
                     category, title, price, img, img2, img3, img4, secret: encryptedSecret
                 }).then(() => {
-                    alert("تم نشر الحساب بنجاح على متجرك! 🚀");
+                    alert("تم نشر الحساب بنجاح! 🚀");
                     cancelEditMode();
                 }).catch(err => alert("رسالة خطأ: " + err.message));
             }
@@ -327,5 +413,4 @@
         }
     </script>
 </body>
-    </html>
-    
+</html>
